@@ -896,10 +896,10 @@ def build_rpn_model(anchor_stride, anchors_per_location, depth):
 def build_center_model(rois):
 
     cnt_c1 = KL.Conv2D(4, (5, 5), padding='same', activation='relu', strides=(2,2), name='cnt_c1')(rois)
-    cnt_m1 = KL.MaxPooling2D(pool_size=(2, 2), strides=(2,2)))(cnt_c1)
+    cnt_m1 = KL.MaxPooling2D(pool_size=(2, 2), strides=(2,2))(cnt_c1)
 
     cnt_c2 = KL.Conv2D(8, (5, 5), padding='same', activation='relu', strides=(2,2), name='cnt_c2')(cnt_m1)
-    cnt_m2 = KL.MaxPooling2D(pool_size=(2, 2), strides=(2,2)))(cnt_c2)
+    cnt_m2 = KL.MaxPooling2D(pool_size=(2, 2), strides=(2,2))(cnt_c2)
 
     cnt_flt = KL.Flatten()(cnt_m2)
     cnt_dns = KL.Dense(2)(cnt_flt)
@@ -2906,7 +2906,7 @@ class MaskRCNN_test():
             config=config)([rpn_class, rpn_bbox, anchors])
 
         # rpn output can be customized
-         = build_center_model();
+        #  = build_center_model();
 
         if mode == "training":
             # Class ID mask to mark class IDs supported by the dataset the image
