@@ -1,6 +1,32 @@
 """
     legacy: copied from colab tested pybook at link: https://colab.research.google.com/drive/1N-elgwGxUJPjucsWd6EFMD8NwnbOu7k5
+
+1) after using upgrade_to_tf2
+
+Traceback (most recent call last):
+  File "samples\test_sl.py", line 62, in <module>
+    model = modellib.MaskRCNN(mode="inference", model_dir=MODEL_DIR, config=config)
+  File ".\mrcnn\model.py", line 1852, in __init__
+    self.keras_model = self.build(mode=mode, config=config)
+  File ".\mrcnn\model.py", line 1871, in build
+    shape=[None, None, config.IMAGE_SHAPE[2]], name="input_image")
+  File "c:\PYTHON3.6\lib\site-packages\keras\engine\topology.py", line 1457, in Input
+    input_tensor=tensor)
+  File "c:\PYTHON3.6\lib\site-packages\keras\legacy\interfaces.py", line 91, in wrapper
+    return func(*args, **kwargs)
+  File "c:\PYTHON3.6\lib\site-packages\keras\engine\topology.py", line 1366, in __init__
+    name=self.name)
+  File "c:\PYTHON3.6\lib\site-packages\keras\backend\tensorflow_backend.py", line 507, in placeholder
+    x = tf.placeholder(dtype, shape=shape, name=name)
+AttributeError: module 'tensorflow' has no attribute 'placeholder'
+
+solution: perhaps keras version
+ref: https://github.com/CyberZHG/keras-bert/issues/24
+
+
+
 """
+
 import numpy as np
 import tensorflow as tf
 import keras
