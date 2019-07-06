@@ -43,6 +43,7 @@ import skimage.io
 import matplotlib
 import matplotlib.pyplot as plt
 
+import cv2
 
 sys.path.append('.')
 sys.path.append('..')
@@ -52,10 +53,11 @@ from mrcnn import utils
 import mrcnn.model as modellib
 from mrcnn import visualize
 
+print('eagerly?',tf.executing_eagerly())
 
 # Root directory of the project
 ROOT_DIR = os.getcwd()
-print (ROOT_DIR)
+print ('ROOT_DIR = ',ROOT_DIR)
 
 # Directory to save logs and trained model
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
@@ -65,11 +67,12 @@ print (MODEL_DIR)
 COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
 # Download COCO trained weights from Releases if needed
 if not os.path.exists(COCO_MODEL_PATH):
+    print('COCO_MODEL_PATH not exists.')
     utils.download_trained_weights(COCO_MODEL_PATH)
 
 # Directory of images to run detection on
 IMAGE_DIR = os.path.join(ROOT_DIR, "images")
-print (IMAGE_DIR)
+print ('IMAGE_DIR = ', IMAGE_DIR)
 
 from samples.coco import coco
 
@@ -83,8 +86,20 @@ config = InferenceConfig()
 config.display()
 
 
+# Load a random image from the images folder
+file_names = next(os.walk(IMAGE_DIR))[2]
+image_name = os.path.join(IMAGE_DIR, random.choice(file_names))
+print('image name=', image_name)
+image = skimage.io.imread(image_name)
+assert image is not None
+print('image shape=', image.shape)
+cv2.imshow('read image', image)
+cv2.waitKey()
+
+
 # Create model object in inference mode.
 model = modellib.MaskRCNN(mode="inference", model_dir=MODEL_DIR, config=config)
+# model = modellib.MaskRCNN(mode="training", model_dir=MODEL_DIR, config=config)
 
 # Load weights trained on MS-COCO
 print(COCO_MODEL_PATH)
@@ -109,9 +124,6 @@ class_names = ['BG', 'person', 'bicycle', 'car', 'motorcycle', 'airplane',
                'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
                'teddy bear', 'hair drier', 'toothbrush']
 
-# Load a random image from the images folder
-file_names = next(os.walk(IMAGE_DIR))[2]
-image = skimage.io.imread(os.path.join(IMAGE_DIR, random.choice(file_names)))
 
 # Run detection
 results = model.detect([image], verbose=1)
