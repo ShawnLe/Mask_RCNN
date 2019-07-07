@@ -93,7 +93,8 @@ print('image name=', image_name)
 image = skimage.io.imread(image_name)
 assert image is not None
 print('image shape=', image.shape)
-cv2.imshow('read image', image)
+image_ = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+cv2.imshow('read image', image_)
 cv2.waitKey()
 
 
@@ -124,9 +125,10 @@ class_names = ['BG', 'person', 'bicycle', 'car', 'motorcycle', 'airplane',
                'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
                'teddy bear', 'hair drier', 'toothbrush']
 
-
 # Run detection
 results = model.detect([image], verbose=1)
+
+exit()
 
 # Visualize results
 r = results[0]
