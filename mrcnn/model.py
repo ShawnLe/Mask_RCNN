@@ -1945,10 +1945,13 @@ class MaskRCNN(keras.Model):
 
         if mode == "training":
             # RPN GT
-            input_rpn_match = KL.Input(
-                shape=[None, 1], name="input_rpn_match", dtype=tf.int32)
-            input_rpn_bbox = KL.Input(
-                shape=[None, 4], name="input_rpn_bbox", dtype=tf.float32)
+            input_rpn_match = inputs["input_rpn_match"]
+            input_rpn_bbox = inputs["input_rpn_bbox"]
+
+            # input_rpn_match = KL.Input(
+            #     shape=[None, 1], name="input_rpn_match", dtype=tf.int32)
+            # input_rpn_bbox = KL.Input(
+            #     shape=[None, 4], name="input_rpn_bbox", dtype=tf.float32)
 
             # Detection GT (class IDs, bounding boxes, and masks)
             # 1. GT Class IDs (zero padded)
@@ -2874,9 +2877,9 @@ class MaskRCNN(keras.Model):
             log("image_metas", image_metas)
             log("anchors", anchors)
         # Run object detection
-        inputs = {"input_images" : molded_images, 
-                  "input_image_meta" : image_metas,
-                  "input_anchors" : anchors }
+        inputs = {"input_images" : tf.cast(molded_images, dtype=tf.float32), 
+                  "input_image_meta" : tf.cast(image_metas, dtype=tf.int32),
+                  "input_anchors" : tf.cast(anchors, dtype=tf.float32) }
         detections, _, _, mrcnn_mask, _, _, _ = self.call(inputs)
             # self.call([molded_images, image_metas, anchors])
 

@@ -94,6 +94,10 @@ class BatchNorm(KL.BatchNormalization):
         """
         return super(self.__class__, self).call(inputs, training=training)
 
+# @tf.function -> no need
+def batchnorm_caller(input):
+    return BatchNorm()(input)
+
 
 if __name__ == '__main__':
 
@@ -110,6 +114,11 @@ if __name__ == '__main__':
     # print('test rpn shape =\n', rpn_out.shape)
 
     # print('batch norm test: ',keras.layers.BatchNormalization()(tf.random.normal((1,48,64,3))))
+
+    print('batch norm caller = ', batchnorm_caller(tf.cast(np.random.rand(1,512,512,64), tf.float32)))  # cast np array to tf tensor
+
+    exit()
     
     # print('batch norm test: ', BatchNorm()(tf.random.normal((1,512,512,64)))) # no error
-    print('batch norm test: ', BatchNorm()(np.random.rand(1,512,512,64))) # error 
+    print('batch norm test: ', BatchNorm()(tf.convert_to_tensor(np.random.rand(1,512,512,64)))) # error 
+    print('batch norm test: ', BatchNorm()(tf.convert_to_tensor(np.random.rand(1,512,512,64)))) # no error
