@@ -98,27 +98,40 @@ class BatchNorm(KL.BatchNormalization):
 def batchnorm_caller(input):
     return BatchNorm()(input)
 
+def test_graph(A, B):
+
+    ad = KL.Add()([A,B])
+    conv = KL.Conv2D(32, (1, 1), name='some_conv')(ad)
+
+    return conv
 
 if __name__ == '__main__':
 
     print('eagerly?',tf.executing_eagerly())
 
     # input = KL.Input(shape=(1,2,3))
-    dummy = dummyClass()
-    print(dummy(tf.constant([1,2,3])))
+    # dummy = dummyClass()
+    # print(dummy(tf.constant([1,2,3])))
 
-    rpn = rpn_model(1, len([0.5, 1, 2]), 256)
+    # rpn = rpn_model(1, len([0.5, 1, 2]), 256)
 
-    rpn_out = rpn(tf.random.normal((1,48,64,3)))
-    print('test rpn =\n', rpn_out)
+    # rpn_out = rpn(tf.random.normal((1,48,64,3)))
+    # print('test rpn =\n', rpn_out)
     # print('test rpn shape =\n', rpn_out.shape)
 
     # print('batch norm test: ',keras.layers.BatchNormalization()(tf.random.normal((1,48,64,3))))
 
-    print('batch norm caller = ', batchnorm_caller(tf.cast(np.random.rand(1,512,512,64), tf.float32)))  # cast np array to tf tensor
-
-    exit()
+    # print('batch norm caller = ', batchnorm_caller(tf.cast(np.random.rand(1,512,512,64), tf.float32)))  # cast np array to tf tensor
     
     # print('batch norm test: ', BatchNorm()(tf.random.normal((1,512,512,64)))) # no error
-    print('batch norm test: ', BatchNorm()(tf.convert_to_tensor(np.random.rand(1,512,512,64)))) # error 
-    print('batch norm test: ', BatchNorm()(tf.convert_to_tensor(np.random.rand(1,512,512,64)))) # no error
+    # print('batch norm test: ', BatchNorm()(tf.convert_to_tensor(np.random.rand(1,512,512,64)))) # error 
+    # print('batch norm test: ', BatchNorm()(tf.convert_to_tensor(np.random.rand(1,512,512,64)))) # no error
+
+    A_ = np.random.rand(1,512,512,64)
+    print("A_ shape =", A_.shape)
+    A = tf.convert_to_tensor(A_, dtype=tf.float32)
+    print(A.get_shape())
+    # print ('A=', A)
+    # B = tf.cast(np.random.rand(1,512,512,64), tf.float32)
+    print("A shape =", A.shape)
+    # print("test graph =", test_graph(A, B))

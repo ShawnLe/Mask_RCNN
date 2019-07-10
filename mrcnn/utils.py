@@ -822,7 +822,7 @@ def batch_slice(inputs, graph_fn, batch_size, names=None):
             output_slice = [output_slice]
         outputs.append(output_slice)
 
-    print('outputs = ', outputs)
+    # print('outputs = ', outputs)
     # Change outputs from a list of slices where each is
     # a list of outputs to a list of outputs and each has
     # a list of slices
@@ -833,11 +833,11 @@ def batch_slice(inputs, graph_fn, batch_size, names=None):
 
     result = [tf.stack(o, axis=0, name=n)
               for o, n in zip(outputs, names)]
-    print ('results=', result)                            
+    # print ('results=', result)                            
 
     if len(result) == 1:
         result = result[0]
-    print ('results after=', result)              
+    # print ('results after=', result)              
 
     return result
 

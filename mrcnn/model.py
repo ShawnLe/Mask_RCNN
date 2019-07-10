@@ -185,7 +185,7 @@ def resnet_graph(input_image, architecture, stage5=False, train_bn=True):
     # Stage 1
     x = KL.ZeroPadding2D((3, 3))(input_image)
     x = KL.Conv2D(64, (7, 7), strides=(2, 2), name='conv1', use_bias=True)(x)
-    print('x bef batchnorm and train_bn =', x.shape, x, train_bn)
+    # print('x bef batchnorm and train_bn =', x.shape, x, train_bn)
     x = BatchNorm(name='bn_conv1')(x, training=train_bn)
     x = KL.Activation('relu')(x)
     C1 = x = KL.MaxPooling2D((3, 3), strides=(2, 2), padding="same")(x)
@@ -881,6 +881,7 @@ def rpn_graph(feature_map, anchors_per_location, anchor_stride):
     # TODO: check if stride of 2 causes alignment issues if the feature map
     # is not even.
     # Shared convolutional base of the RPN
+    print('featuer_map =', len(feature_map), type(feature_map), feature_map[0].shape.as_list(), type(feature_map[0].shape.as_list()), type(feature_map[0]))
     shared = KL.Conv2D(512, (3, 3), padding='same', activation='relu',
                        strides=anchor_stride,
                        name='rpn_conv_shared')(feature_map)
@@ -918,6 +919,7 @@ class rpn_model(keras.Model):
         self.anchor_stride = anchor_stride
 
     def call(self, input_feature_map):
+        print('type input_feature_map = ', type(input_feature_map))
         outputs = rpn_graph(input_feature_map, self.anchors_per_location, self.anchor_stride)
         return outputs
 
@@ -1941,6 +1943,10 @@ class MaskRCNN(keras.Model):
         #                             name="input_image_meta")
 
         input_image = inputs["input_images"]
+
+        assert type(input_image) is not list
+        print("input img type shape", type(input_image), input_image.shape, input_image)
+
         input_image_meta = inputs["input_image_meta"]
 
         if mode == "training":
@@ -2035,10 +2041,13 @@ class MaskRCNN(keras.Model):
         #                       len(config.RPN_ANCHOR_RATIOS), config.TOP_DOWN_PYRAMID_SIZE)
         rpn = rpn_model(config.RPN_ANCHOR_STRIDE, len(config.RPN_ANCHOR_RATIOS), config.TOP_DOWN_PYRAMID_SIZE)
 
+        print("type(P2) = ", type(P2))
+
         # Loop through pyramid layers
         layer_outputs = []  # list of lists
         for p in rpn_feature_maps:
-            layer_outputs.append(rpn([p]))
+            # layer_outputs.append(rpn([p]))  # *MUST NOT* send list[tensor] to a tf.keras.layer in 2.0
+            layer_outputs.append(rpn(p))
         # Concatenate layer outputs
         # Convert from list of lists of level outputs to list of lists
         # of outputs across levels.
@@ -2792,6 +2801,8 @@ class MaskRCNN(keras.Model):
         """
         # How many detections do we have?
         # Detections array is padded with zeros. Find the first class_id == 0.
+        print('detections type shape content ', type(detections), detections.shape, detections)
+        print('detections[:, 4] == 0 --> ', detections[:, 4] == 0)
         zero_ix = tf.where(detections[:, 4] == 0)[0]
         N = zero_ix[0] if zero_ix.shape[0] > 0 else detections.shape[0]
 
@@ -2873,6 +2884,7 @@ class MaskRCNN(keras.Model):
         anchors = np.broadcast_to(anchors, (self.config.BATCH_SIZE,) + anchors.shape)
 
         if verbose:
+            print('type shape molded_images', type(molded_images), molded_images.shape)
             log("molded_images", molded_images)
             log("image_metas", image_metas)
             log("anchors", anchors)
@@ -4138,10 +4150,17 @@ def norm_boxes_graph(boxes, shape):
     Returns:
         [..., (y1, x1, y2, x2)] in normalized coordinates
     """
+    # print("norm_boxes_graph ", boxes)
+    if not boxes.dtype.is_compatible_with(tf.float32):
+        print("cast boxes type")
+        boxes = tf.cast(boxes, tf.float32)
+    else:
+        print("boxes.dtype is compatible")
     h, w = tf.split(tf.cast(shape, tf.float32), 2)
     scale = tf.concat([h, w, h, w], axis=-1) - tf.constant(1.0)
     shift = tf.constant([0., 0., 1., 1.])
-    return tf.divide(boxes - shift, scale)
+    # print("boxes vs shift =", boxes, shift)
+    return tf.divide(boxes - shift, scale)  # sub(tract) tensor op requires both operands' type same
 
 
 def denorm_boxes_graph(boxes, shape):
