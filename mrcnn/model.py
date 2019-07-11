@@ -287,15 +287,11 @@ class ProposalLayer(KL.Layer):
 
     def call(self, inputs):
 
-        print('[sl test] child call is called')
-        # print('inputs shape=', inputs)
-
         # Box Scores. Use the foreground class confidence. [Batch, num_rois, 1]
         scores = inputs[0][:, :, 1]
         # Box deltas [batch, num_rois, 4]
         deltas = inputs[1]
         deltas = deltas * np.reshape(self.config.RPN_BBOX_STD_DEV, [1, 1, 4])
-        print('deltas shape =', K.int_shape(deltas))
 
         # Anchors
         anchors = inputs[2]
@@ -320,8 +316,6 @@ class ProposalLayer(KL.Layer):
                                   self.config.IMAGES_PER_GPU,
                                   names=["refined_anchors"])
 
-        print('boxes 1 shape=', boxes)
-
         # Clip to image boundaries. Since we're in normalized coordinates,
         # clip to 0..1 range. [batch, N, (y1, x1, y2, x2)]
         window = np.array([0, 0, 1, 1], dtype=np.float32)
@@ -329,8 +323,6 @@ class ProposalLayer(KL.Layer):
                                   lambda x: clip_boxes_graph(x, window),
                                   self.config.IMAGES_PER_GPU,
                                   names=["refined_anchors_clipped"])
-
-        print('boxes 2 shape=', boxes)
 
         # Filter out small boxes
         # According to Xinlei Chen's paper, this reduces detection accuracy
@@ -353,7 +345,6 @@ class ProposalLayer(KL.Layer):
     def compute_output_shape(self, input_shape):
         # this function is not called in TF 2.0
         # this style of computing output shape is deprecated in eager execution
-        print('[compute_output_shape] rpn output shape =', (None, self.proposal_count, 4))
         return (None, self.proposal_count, 4)
 
 
@@ -992,8 +983,6 @@ def fpn_classifier_graph(rois, feature_maps, image_meta,
     x = PyramidROIAlign([pool_size, pool_size],
                         name="roi_align_classifier")([rois, image_meta] + feature_maps)
 
-    print('x shape pyrROIAlign =', K.int_shape(x))
-
     # Two 1024 FC layers (implemented with Conv2D for consistency)
     x = KL.TimeDistributed(KL.Conv2D(fc_layers_size, (pool_size, pool_size), padding="valid"),
                            name="mrcnn_class_conv1")(x)
@@ -1004,11 +993,8 @@ def fpn_classifier_graph(rois, feature_maps, image_meta,
     x = KL.TimeDistributed(BatchNorm(), name='mrcnn_class_bn2')(x, training=train_bn)
     x = KL.Activation('relu')(x)
 
-    print('x shape before squeeze=', K.int_shape(x))
     shared = KL.Lambda(lambda x: K.squeeze(K.squeeze(x, 3), 2),
                        name="pool_squeeze")(x)
-    print('x shape after squeeze=', K.int_shape(x))
-
     # Classifier head
     mrcnn_class_logits = KL.TimeDistributed(KL.Dense(num_classes),
                                             name='mrcnn_class_logits')(shared)
@@ -1944,6 +1930,7 @@ class MaskRCNN(keras.Model):
 
         input_image = inputs["input_images"]
 
+        # tf keras layers don't deal with list of arrays
         assert type(input_image) is not list
         print("input img type shape", type(input_image), input_image.shape)
  
@@ -2100,9 +2087,6 @@ class MaskRCNN(keras.Model):
                 DetectionTargetLayer(config, name="proposal_targets")([
                     target_rois, input_gt_class_ids, gt_boxes, input_gt_masks])
 
-            print('rois len', len(rois))
-            print('roi', rois)
-
             # Network Heads
             # TODO: verify that this handles zero padded ROIs
             mrcnn_class_logits, mrcnn_class, mrcnn_bbox =\
@@ -2143,9 +2127,6 @@ class MaskRCNN(keras.Model):
                        rpn_class_loss, rpn_bbox_loss, class_loss, bbox_loss, mask_loss]
             # model = KM.Model(inputs, outputs, name='mask_rcnn')
         else:
-
-            print('rois len', K.int_shape(rpn_rois))
-            print('roi', rpn_rois)
 
             # Network Heads
             # Proposal classifier and BBox regressor heads
@@ -2904,6 +2885,8 @@ class MaskRCNN(keras.Model):
             log("image_metas", image_metas)
             log("anchors", anchors)
         # Run object detection
+        # recommend to use tf.convert_to_tensor instead
+        # tf.cast calls convert_to_tensor under the hood, and convert numpy arrays to tensors is an on-going work
         inputs = {"input_images" : tf.cast(molded_images, dtype=tf.float32), 
                   "input_image_meta" : tf.cast(image_metas, dtype=tf.int32),
                   "input_anchors" : tf.cast(anchors, dtype=tf.float32) }
