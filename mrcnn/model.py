@@ -288,7 +288,7 @@ class ProposalLayer(KL.Layer):
     def call(self, inputs):
 
         print('[sl test] child call is called')
-        print('inputs shape=', inputs)
+        # print('inputs shape=', inputs)
 
         # Box Scores. Use the foreground class confidence. [Batch, num_rois, 1]
         scores = inputs[0][:, :, 1]
@@ -1945,8 +1945,8 @@ class MaskRCNN(keras.Model):
         input_image = inputs["input_images"]
 
         assert type(input_image) is not list
-        print("input img type shape", type(input_image), input_image.shape, input_image)
-
+        print("input img type shape", type(input_image), input_image.shape)
+ 
         input_image_meta = inputs["input_image_meta"]
 
         if mode == "training":
@@ -2801,16 +2801,21 @@ class MaskRCNN(keras.Model):
         """
         # How many detections do we have?
         # Detections array is padded with zeros. Find the first class_id == 0.
-        print('detections type shape content ', type(detections), detections.shape, detections)
-        print('detections[:, 4] == 0 --> ', detections[:, 4] == 0)
-        zero_ix = tf.where(detections[:, 4] == 0)[0]
+        # print('detections type shape content ', type(detections), detections.shape, detections)
+        # print('detections[:, 4] == 0 --> ', tf.equal(detections[:, 4],0))
+        zero_ix = np.where(detections[:, 4] == 0)[0]
+        # zero_ix = tf.where(detections[:, 4] == 0)[0]
+        # zero_ix = tf.where( tf.equal(detections[:, 4], 0) )[0]    # use tf.equal instead. Link: https://github.com/tensorflow/tensorflow/issues/22394#issue-361947764
         N = zero_ix[0] if zero_ix.shape[0] > 0 else detections.shape[0]
 
         # Extract boxes, class_ids, scores, and class-specific masks
         boxes = detections[:N, :4]
         class_ids = detections[:N, 4].astype(np.int32)
+        # class_ids = tf.cast(detections[:N, 4], tf.int32)
         scores = detections[:N, 5]
+        # print('mrcnn_mask type ', type(mrcnn_mask), N, class_ids)
         masks = mrcnn_mask[np.arange(N), :, :, class_ids]
+        # masks = mrcnn_mask[tf.range(0,N), :, :, class_ids]
 
         # Translate normalized coordinates in the resized image to pixel
         # coordinates in the original image before resizing
@@ -2825,16 +2830,26 @@ class MaskRCNN(keras.Model):
         # Convert boxes to pixel coordinates on the original image
         boxes = utils.denorm_boxes(boxes, original_image_shape[:2])
 
+        print('boxes shape =\n', boxes)#boxes.shape, type(boxes))
+        print("(boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1]) =\n ", (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1]))
+        print("(boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1]) = \n", np.where((boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1]) <=0))
         # Filter out detections with zero area. Happens in early training when
         # network weights are still random
+        # there is no zero area. So the indexing [0] crashes
         exclude_ix = tf.where(
-            (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1]) <= 0)[0]
-        if exclude_ix.shape[0] > 0:
-            boxes = np.delete(boxes, exclude_ix, axis=0)
-            class_ids = np.delete(class_ids, exclude_ix, axis=0)
-            scores = np.delete(scores, exclude_ix, axis=0)
-            masks = np.delete(masks, exclude_ix, axis=0)
-            N = class_ids.shape[0]
+            (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1]) <= 0) #[0]
+        print("exclude_ix.shape =", exclude_ix.shape[0], exclude_ix , np.sum(exclude_ix.shape))
+
+        # @TODO: needs processing for case having no zero area
+        # if not any(   ):
+        #     exclude_ix = exclude_ix[0]
+
+        # if exclude_ix.shape[0] > 0:
+        #     boxes = np.delete(boxes, exclude_ix, axis=0)
+        #     class_ids = np.delete(class_ids, exclude_ix, axis=0)
+        #     scores = np.delete(scores, exclude_ix, axis=0)
+        #     masks = np.delete(masks, exclude_ix, axis=0)
+        #     N = class_ids.shape[0]
 
         # Resize masks to original image size and set boundary threshold.
         full_masks = []
@@ -2894,6 +2909,11 @@ class MaskRCNN(keras.Model):
                   "input_anchors" : tf.cast(anchors, dtype=tf.float32) }
         detections, _, _, mrcnn_mask, _, _, _ = self.call(inputs)
             # self.call([molded_images, image_metas, anchors])
+
+        # convert return eagerTensors to numpy arrays for next processing
+        detections = detections.numpy()
+        mrcnn_mask = mrcnn_mask.numpy()
+        print('detections mrcnn_mask type =', type(detections), type(mrcnn_mask))
 
         # detections, _, _, mrcnn_mask, _, _, _ =\
         #     self.keras_model.predict([molded_images, image_metas, anchors], verbose=0)

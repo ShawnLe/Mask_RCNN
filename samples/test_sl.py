@@ -128,7 +128,7 @@ class_names = ['BG', 'person', 'bicycle', 'car', 'motorcycle', 'airplane',
 # Run detection
 results = model.detect([image], verbose=1)
 
-exit()
+# exit()
 
 # Visualize results
 r = results[0]

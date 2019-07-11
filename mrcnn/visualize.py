@@ -13,8 +13,19 @@ import random
 import itertools
 import colorsys
 
+import cv2
+
 import numpy as np
 from skimage.measure import find_contours
+
+# SL adds -- starts
+# TODO this don't work
+import matplotlib
+# Agg backend runs without a display
+# matplotlib.use('Agg')
+matplotlib.use('TkAgg')
+# SL adds -- ends
+
 import matplotlib.pyplot as plt
 from matplotlib import patches,  lines
 from matplotlib.patches import Polygon
@@ -165,6 +176,12 @@ def display_instances(image, boxes, masks, class_ids, class_names,
     ax.imshow(masked_image.astype(np.uint8))
     if auto_show:
         plt.show()
+
+    # TODO fix matplotlib backend problem instead of using cv2 imwrite
+    cv2.imwrite('masked_im.jpg', masked_image.astype(np.uint8))
+    
+    # cv2.imshow('masked_image',masked_image.astype(np.uint8))
+    # cv2.waitKey()
 
 
 def display_differences(image,
