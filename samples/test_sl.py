@@ -5,6 +5,8 @@ import numpy as np
 import tensorflow as tf
 import keras
 
+import cv2
+
 import sys
 import os
 import random
@@ -45,6 +47,16 @@ if not os.path.exists(COCO_MODEL_PATH):
 IMAGE_DIR = os.path.join(ROOT_DIR, "images")
 print (IMAGE_DIR)
 
+# Load a random image from the images folder
+file_names = next(os.walk(IMAGE_DIR))[2]
+image_name = os.path.join(IMAGE_DIR, random.choice(file_names))
+
+print('image name=', image_name)
+image = skimage.io.imread(image_name)
+assert image is not None
+cv2.imshow('read image', image)
+cv2.waitKey()
+
 from samples.coco import coco
 
 class InferenceConfig(coco.CocoConfig):
@@ -82,10 +94,6 @@ class_names = ['BG', 'person', 'bicycle', 'car', 'motorcycle', 'airplane',
                'keyboard', 'cell phone', 'microwave', 'oven', 'toaster',
                'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
                'teddy bear', 'hair drier', 'toothbrush']
-
-# Load a random image from the images folder
-file_names = next(os.walk(IMAGE_DIR))[2]
-image = skimage.io.imread(os.path.join(IMAGE_DIR, random.choice(file_names)))
 
 # Run detection
 results = model.detect([image], verbose=1)
